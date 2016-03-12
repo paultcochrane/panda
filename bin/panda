@@ -88,6 +88,12 @@ multi MAIN ('look', *@modules, Str :$prefix) {
     }
 }
 
+#| print version information and exit
+multi sub MAIN(Bool :$version, Str :$prefix) {
+    my $panda = Panda.new(:ecosystem(make-default-ecosystem($prefix)));
+    say $panda.version;
+}
+
 #| prints USAGE and exits
 multi sub MAIN('help') { USAGE }
 multi sub MAIN(Bool :$help) { USAGE }
@@ -106,6 +112,7 @@ Examples:
 Common options:
     --prefix=/path/to/modules    Place to put modules, executable scripts, etc.
     --help                       Print the help/usage text.
+    --version                    Print version information and exit.
 
 Actions:
     install        Installs the modules listed on the command line, and their

@@ -237,6 +237,27 @@ class Panda {
             when 'look'    { self.look($bone) };
         }
     }
+
+    method version {
+        my $version;
+
+        if '.git'.IO.e {
+            $version = qx{git describe --tags}.chomp;
+        }
+        elsif %?RESOURCES.repo {
+            # read version from META.info (a bit hacky, but works)
+            my $repo = %?RESOURCES.repo;
+            my $lib-path = $repo.subst(/ ^ 'file#' /, '');
+            my $metafile = $*SPEC.catdir($lib-path.IO, '..', 'META.info');
+            my %meta = from-json slurp $metafile;
+            $version = %meta<version>;
+        }
+        else {
+            $version = "unknown";
+        }
+
+        return $version;
+    }
 }
 
 # vim: ft=perl6
