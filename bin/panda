@@ -11,8 +11,9 @@ if %*ENV<PANDA_DEFAULT_OPTS> {
 my %failed;
 
 #| Install the specified modules
-multi MAIN ('install', *@modules, Bool :$notests, Bool :$nodeps, Bool :$force = False,
-            Str :$prefix) {
+multi MAIN ('install', *@modules, Bool :$notests, Bool :$nodeps,
+            Bool :$force = False, Str :$prefix, *%extra-opts) {
+    warn-extra-opts(%extra-opts) if %extra-opts.keys;
     my $panda = Panda.new(:ecosystem(make-default-ecosystem($prefix)));
     for @modules -> $x {
         $panda.resolve($x, :$notests, :$nodeps, :action<install>, :$force,
@@ -22,7 +23,9 @@ multi MAIN ('install', *@modules, Bool :$notests, Bool :$nodeps, Bool :$force = 
 }
 
 #| Install dependencies, but don't build the modules themselves
-multi MAIN ('installdeps', *@modules, Bool :$notests, Bool :$force = False, Str :$prefix) {
+multi MAIN ('installdeps', *@modules, Bool :$notests, Bool :$force = False,
+            Str :$prefix, *%extra-opts) {
+    warn-extra-opts(%extra-opts) if %extra-opts.keys;
     my $panda = Panda.new(:ecosystem(make-default-ecosystem($prefix)));
     for @modules -> $x {
         $panda.resolve($x, :$notests, :action<install-deps-only>, :$force,
@@ -57,7 +60,8 @@ multi MAIN ('search', $pattern = '', Str :$prefix) {
 
 #| Autogenerate META.info
 multi MAIN ('gen-meta', Bool :$notests, Str :$name, Str :$auth,
-            Str :$ver, Str :$desc, Str :$prefix) {
+            Str :$ver, Str :$desc, Str :$prefix, *%extra-opts) {
+    warn-extra-opts(%extra-opts) if %extra-opts.keys;
     my $panda = Panda.new(:ecosystem(make-default-ecosystem($prefix)));
     $panda.bundler.bundle($panda, :$notests, :$name, :$auth, :$ver, :$desc);
 }
@@ -91,6 +95,22 @@ multi MAIN ('look', *@modules, Str :$prefix) {
 #| prints USAGE and exits
 multi sub MAIN('help') { USAGE }
 multi sub MAIN(Bool :$help) { USAGE }
+
+sub warn-extra-opts(%extra-opts) {
+    if %extra-opts<no-tests>:exists {
+        say "WARNING: You used the option '--no-tests'; you should use '--notests' instead.";
+        %extra-opts<no-tests>:delete;
+    }
+    if %extra-opts<no-deps>:exists {
+        say "WARNING: You used the option '--no-deps'; you should use '--nodeps' instead.";
+        %extra-opts<no-deps>:delete;
+    }
+    say "WARNING: Unknown extra options: ", %extra-opts.keys.map({"--" ~ $_}).join(', ')
+        if %extra-opts.keys;
+    say "";
+    USAGE;
+    exit 255;
+}
 
 sub USAGE {
     note q:to/END_USAGE/.chomp; # 'note' adds a newline, so get rid of heredoc's
